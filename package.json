@@ -1,0 +1,24 @@
+{
+  "name": "monkey-api",
+  "version": "0.0.1",
+  "description": "This is the backend for a mobile e wallert and payment gateway developed by Byron Wezvo. #Stitch Pay\u001b[D\u001b[D\u001b[C\u001b[C",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "keywords": [
+    "payment-gateway",
+    "stitch-pay-api",
+    "byron-wezvo"
+  ],
+  "author": "Byron Wezvo",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^4.0.1",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.9.12",
+    "uuid": "^8.0.0"
+  }
+}
