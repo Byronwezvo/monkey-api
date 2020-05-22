@@ -1,6 +1,6 @@
 # Monkey Api
 
-This is the abck end api for Stitch wallet.
+This is the back end api for Stitch wallet.
 Development for this project started on **1 May 2020**.
 
 **Developed by Byron**
