@@ -155,7 +155,7 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
           bcrypt.compareSync(
             inputpassword,
             mobileExistCheck[0]['user_password']
-          )
+          ) //
         ) {
           case true:
             // ::: Store User in a variable
@@ -167,13 +167,14 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
             // ::: Push to Array
             userOnlineArray.push(authenticatedUser)
 
-            // TOD => respond with something else
-            res.send(userOnlineArray)
+            // ::: Respond with array to use as list in Flutter
+            res.send([authenticatedUser])
             break
 
           case false:
             // ::: If password is wrong
-            res.status(400).send('Wrong password')
+            res.status(400).json({ error: 'Wrong Password' })
+            break
 
           default:
             // ::: Mybe server is offline or something
@@ -181,6 +182,8 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
             break
         }
       }
+    } else {
+      res.status(400).json({ error: 'User does not Exist' })
     }
   } catch (error) {
     res.status(500).send(serverErrorMessage)
