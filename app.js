@@ -3,7 +3,12 @@ const BodyParser = require('body-parser')
 const Mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const { v4: id } = require('uuid')
+var exphbs = require('express-handlebars')
 const app = express()
+
+// ::: Set up templating engine Staff
+app.engine('handlebars', exphbs())
+app.set('view engine', 'handlebars')
 
 // ::: Set up => BodyParser Middleware
 app.use(BodyParser.json())
@@ -34,6 +39,11 @@ Mongoose.connect('mongodb://localhost', {
   dbName: 'StitchPay',
   useNewUrlParser: true,
   useUnifiedTopology: true,
+})
+
+// ::::: Admin Routes
+app.get('/admin', function (req, res) {
+  res.render('admin')
 })
 
 // :: Dummy Route
@@ -209,7 +219,7 @@ app.post('/logout/:mobile', (req, res) => {
         case true:
           element['user_status'] = false
           userOnlineArray.pop(element)
-          console.log(userOnlineArray)
+          console.log(`${userMobile} has logged out`)
           res.json({
             completed: true,
             message: 'User logged out',
@@ -225,7 +235,6 @@ app.post('/logout/:mobile', (req, res) => {
       }
       break
     }
-    res.status(500).json(serverErrorMessage)
   } catch (error) {
     res.send(500).send(serverErrorMessage)
   }
