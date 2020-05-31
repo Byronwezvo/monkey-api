@@ -6,6 +6,9 @@ const { v4: id } = require('uuid')
 var exphbs = require('express-handlebars')
 const app = express()
 
+// ::: Serve Static files in the public folder
+app.use(express.static('public'))
+
 // ::: Set up templating engine Staff
 app.engine('handlebars', exphbs())
 app.set('view engine', 'handlebars')
@@ -29,8 +32,6 @@ const History = require('./utils/History')
 // >>> Import Server Error message
 const serverErrorMessage = require('./utils/server_error')
 
-// coment
-
 // >>> Array in Local RAM Memory
 const userOnlineArray = []
 
@@ -43,14 +44,14 @@ Mongoose.connect('mongodb://localhost', {
 
 // ::::: Admin Routes
 app.get('/admin', function (req, res) {
-  res.render('admin')
+  res.sendFile('./public/index.html', { root: __dirname })
 })
 
 // :: Dummy Route
 app.get('/test', async (req, res, next) => {
   try {
     const result = await UserModel.find()
-    res.send(result)
+    res.json(result)
   } catch (error) {
     res.status(500).json(serverErrorMessage)
   }
