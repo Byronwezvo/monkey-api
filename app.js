@@ -180,6 +180,9 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
 
             // ::: Respond with array to use as list in Flutter
             res.send([authenticatedUser])
+            console.log(
+              `${authenticatedUser['user_name']} has logged in ${Date()}`
+            )
             break
 
           case false:
@@ -322,7 +325,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
             transactionStatus.transactionid
           )
         )
-        console.log(updatedSenderHistoryArray)
+        //console.log(updatedSenderHistoryArray)
         // :: save history to db
         await UserModel.updateOne(
           { user_mobile: senderInput },
@@ -363,7 +366,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
         updatedRecieverNotificationArray.push(
           new Notification(`You recieved ${amountToSend} from ${recieverInput}`)
         )
-        console.log(updatedRecieverNotificationArray)
+        //console.log(updatedRecieverNotificationArray)
         // :: save to db
         await UserModel.updateOne(
           { user_mobile: recieverInput },
@@ -376,6 +379,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
 
         // :::
         res.status(200).json(transactionStatus)
+        console.log(`${senderInput} sent ${amountToSend} to ${recieverInput}`)
         break
 
       // ::: Create a response and save data to db
@@ -396,5 +400,5 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
 })
 
 // ::: Serve the Application
-app.listen(3000, () => console.log('Application Running'))
+app.listen(3000, () => console.log('Application Running on 3000'))
 // TODO : change to another port or environment ports
