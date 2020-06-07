@@ -173,9 +173,16 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
             const authenticatedUser = mobileExistCheck[0]
 
             // ::: Set Status to True
-            authenticatedUser['user_status'] = true
+            authenticatedUser['user_status'] = true // <- Write to db not array
+            // :: save history to db
+            await UserModel.updateOne(
+              { user_mobile: inputMobile },
+              { $set: { user_status: true } }
+            )
+            authenticatedUser['user_history'] = null
+            authenticatedUser['user_notifications'] = null // <- Remove notifications
 
-            // ::: Push to Array
+            // ::: Push to Array <- Delete this
             userOnlineArray.push(authenticatedUser)
 
             // ::: Respond with array to use as list in Flutter
