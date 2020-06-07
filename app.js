@@ -174,11 +174,13 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
 
             // ::: Set Status to True
             authenticatedUser['user_status'] = true // <- Write to db not array
-            // :: save history to db
+
+            // :: Status -> change to True
             await UserModel.updateOne(
               { user_mobile: inputMobile },
               { $set: { user_status: true } }
             )
+
             authenticatedUser['user_history'] = null
             authenticatedUser['user_notifications'] = null // <- Remove notifications
 
@@ -217,7 +219,7 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
  *
  * @author Byron Wezvo
  */
-app.post('/logout/:mobile', (req, res) => {
+app.post('/logout/:mobile', async (req, res) => {
   try {
     // get details
     const userMobile = req.params.mobile
@@ -230,6 +232,13 @@ app.post('/logout/:mobile', (req, res) => {
         case true:
           element['user_status'] = false
           userOnlineArray.pop(element)
+
+          //Status -> false
+          await UserModel.updateOne(
+            { user_mobile: userMobile },
+            { $set: { user_status: false } }
+          )
+
           console.log(`${userMobile} has logged out`)
           res.json({
             completed: true,
