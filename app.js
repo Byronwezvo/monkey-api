@@ -173,13 +173,25 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
             const authenticatedUser = mobileExistCheck[0]
 
             // ::: Set Status to True
-            authenticatedUser['user_status'] = true
+            authenticatedUser['user_status'] = true // <- Write to db not array
 
-            // ::: Push to Array
+            // :: Status -> change to True
+            await UserModel.updateOne(
+              { user_mobile: inputMobile },
+              { $set: { user_status: true } }
+            )
+
+            authenticatedUser['user_history'] = null
+            authenticatedUser['user_notifications'] = null // <- Remove notifications
+
+            // ::: Push to Array <- Delete this
             userOnlineArray.push(authenticatedUser)
 
             // ::: Respond with array to use as list in Flutter
             res.send([authenticatedUser])
+            console.log(
+              `${authenticatedUser['user_name']} has logged in ${Date()}`
+            )
             break
 
           case false:
@@ -207,7 +219,7 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
  *
  * @author Byron Wezvo
  */
-app.post('/logout/:mobile', (req, res) => {
+app.post('/logout/:mobile', async (req, res) => {
   try {
     // get details
     const userMobile = req.params.mobile
@@ -220,6 +232,13 @@ app.post('/logout/:mobile', (req, res) => {
         case true:
           element['user_status'] = false
           userOnlineArray.pop(element)
+
+          //Status -> false
+          await UserModel.updateOne(
+            { user_mobile: userMobile },
+            { $set: { user_status: false } }
+          )
+
           console.log(`${userMobile} has logged out`)
           res.json({
             completed: true,
@@ -322,7 +341,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
             transactionStatus.transactionid
           )
         )
-        console.log(updatedSenderHistoryArray)
+        //console.log(updatedSenderHistoryArray)
         // :: save history to db
         await UserModel.updateOne(
           { user_mobile: senderInput },
@@ -363,7 +382,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
         updatedRecieverNotificationArray.push(
           new Notification(`You recieved ${amountToSend} from ${recieverInput}`)
         )
-        console.log(updatedRecieverNotificationArray)
+        //console.log(updatedRecieverNotificationArray)
         // :: save to db
         await UserModel.updateOne(
           { user_mobile: recieverInput },
@@ -376,6 +395,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
 
         // :::
         res.status(200).json(transactionStatus)
+        console.log(`${senderInput} sent ${amountToSend} to ${recieverInput}`)
         break
 
       // ::: Create a response and save data to db
@@ -396,5 +416,5 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
 })
 
 // ::: Serve the Application
-app.listen(3000, () => console.log('Application Running'))
+app.listen(3000, () => console.log('Application Running on 3000'))
 // TODO : change to another port or environment ports
