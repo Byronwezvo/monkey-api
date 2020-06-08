@@ -278,9 +278,13 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
     amount: parseFloat(amount),
     approve: false,
     sender: sender,
+    senderName: '',
+    senderInitialBalance: null,
+    senderStatus: false,
     receiver: reciever,
-    receiverExist: null,
-    senderOnlineStatus: false,
+    receicerName: '',
+    receiverInitialBalane: null,
+    receiverExist: false,
   }
 
   /**
@@ -290,12 +294,29 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
    */
 
   // ::: Check if Sender is online
-  const senderObject = await UserModel.find({ user_mobile: sender })
-  if (senderObject[0]['user_status'] === true) {
-    transactionObject.senderOnlineStatus = true
+  const senderObject = await UserModel.findOne({ user_mobile: sender })
+  if (senderObject['user_status'] === true) {
+    transactionObject.senderStatus = true
+    transactionObject.senderName = senderObject['user_name']
+    transactionObject.senderInitialBalance = senderObject['user_balance']
   } else {
     res.status(300).json({ error: 'User is not online' })
   }
+
+  // ::: check if Reciever exist in Database
+  const receiverObject = await UserModel.findOne({ user_mobile: reciever })
+  //console.log(receiverObject)
+
+  // ::: if null send and erro
+  if (receiverObject === null) {
+    res.status(400).json({ error: 'user does not exist' })
+  } else {
+    transactionObject.receicerName = receiverObject['user_name']
+    transactionObject.receiverInitialBalane = receiverObject['user_balance']
+    transactionObject.receiverExist = true
+  }
+
+  //  ::: Validate
 
   res.send(transactionObject)
 })
