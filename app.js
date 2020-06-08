@@ -271,19 +271,21 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
   // ::: Local Variables
   const sender = req.params.sender
   const reciever = req.params.reciever
-  const amount = req.params.amount
+  const amount = parseInt(req.params.amount)
 
   // ::: Transaction obbject
   let transactionObject = {
-    amount: parseFloat(amount),
+    amount: amount,
     approve: false,
     sender: sender,
     senderName: '',
     senderInitialBalance: null,
+    senderNewBalance: null,
     senderStatus: false,
     receiver: reciever,
     receicerName: '',
     receiverInitialBalane: null,
+    receiverNewBalance: null,
     receiverExist: false,
   }
 
@@ -300,7 +302,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
     transactionObject.senderName = senderObject['user_name']
     transactionObject.senderInitialBalance = senderObject['user_balance']
   } else {
-    res.status(300).json({ error: 'User is not online' })
+    res.status(300).json({ error: 'Sender is not online' })
   }
 
   // ::: check if Reciever exist in Database
@@ -316,7 +318,39 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
     transactionObject.receiverExist = true
   }
 
-  //  ::: Validate
+  /**
+   * This logic will change the approve the transaction
+   */
+
+  //  ::: Check if Sender Newbalance is above that zero
+  const senderNewbalanceResult = transactionObject.senderInitialBalance - amount
+  const receiverNewBalanceReslut =
+    transactionObject.receiverInitialBalane + amount
+
+  if (senderNewbalanceResult > 0) {
+    transactionObject.approve = true
+  } else {
+    res.status(400).json({ error: 'Amount to send is above balance' })
+  }
+
+  // ::: Process Transaction -> Send money
+  switch (transactionObject.approve) {
+    case true:
+      // ::: update balances
+      // -> Transaction Object
+      transactionObject.senderNewBalance = senderNewbalanceResult
+      transactionObject.receiverNewBalance = receiverNewBalanceReslut
+
+      // -> Write changed to sender [db]
+      await UserModel.updateOne(
+        { userMobile: sender },
+        { $set: { user_balance: senderNewbalanceResult } }
+      )
+      break
+
+    default:
+      break
+  }
 
   res.send(transactionObject)
 })
