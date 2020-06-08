@@ -341,11 +341,21 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       transactionObject.senderNewBalance = senderNewbalanceResult
       transactionObject.receiverNewBalance = receiverNewBalanceReslut
 
-      // -> Write changed to sender [db]
+      // -> Write new Balance to sender [db]
       await UserModel.updateOne(
-        { userMobile: sender },
+        { user_mobile: sender },
         { $set: { user_balance: senderNewbalanceResult } }
       )
+
+      // -> Write new Balance to receiver [db]
+      await UserModel.updateOne(
+        { user_mobile: reciever },
+        { $set: { user_balance: receiverNewBalanceReslut } }
+      )
+
+      // --> Write to sender History array
+
+      console.log('done')
       break
 
     default:
