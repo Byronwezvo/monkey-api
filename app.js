@@ -274,13 +274,13 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
   const amount = req.params.amount
 
   // ::: Transaction obbject
-  transactionObject = {
+  let transactionObject = {
     amount: parseFloat(amount),
     approve: false,
     sender: sender,
     receiver: reciever,
     receiverExist: null,
-    senderOnlineStatus: null,
+    senderOnlineStatus: false,
   }
 
   /**
@@ -288,7 +288,14 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
    * basically if one of the given values is false or null then the route should
    * return an error.
    */
+
   // ::: Check if Sender is online
+  const senderObject = await UserModel.find({ user_mobile: sender })
+  if (senderObject[0]['user_status'] === true) {
+    transactionObject.senderOnlineStatus = true
+  } else {
+    res.status(300).json({ error: 'User is not online' })
+  }
 
   res.send(transactionObject)
 })
