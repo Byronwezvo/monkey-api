@@ -385,6 +385,9 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       res.status(200).json({ message: 'approved' })
       break
 
+    case false:
+      break
+
     default:
       break
   }
