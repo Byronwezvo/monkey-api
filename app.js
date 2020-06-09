@@ -287,6 +287,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
     receiverInitialBalane: null,
     receiverNewBalance: null,
     receiverExist: false,
+    transactionID: `transaction-${id()}`,
   }
 
   /**
@@ -341,28 +342,48 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       transactionObject.senderNewBalance = senderNewbalanceResult
       transactionObject.receiverNewBalance = receiverNewBalanceReslut
 
-      // -> Write new Balance to sender [db]
+      // -> Write new data to sender [db]
+      const senderNewHistoryArray = senderObject['user_history']
+      senderNewHistoryArray.push(
+        new History(
+          `You sent \$${amount} to ${reciever} [${transactionObject.receicerName}]`,
+          transactionObject.transactionID
+        )
+      )
       await UserModel.updateOne(
         { user_mobile: sender },
-        { $set: { user_balance: senderNewbalanceResult } }
+        {
+          $set: {
+            user_balance: senderNewbalanceResult,
+            user_history: senderNewHistoryArray,
+          },
+        }
       )
 
-      // -> Write new Balance to receiver [db]
+      // -> Write new data to receiver [db]
+      const recieverNewHistoryArray = senderObject['user_history']
+      recieverNewHistoryArray.push(
+        new History(
+          `You recieved ${amount} from ${sender} [${transactionObject.senderName}]`,
+          transactionObject.transactionID
+        )
+      )
       await UserModel.updateOne(
         { user_mobile: reciever },
-        { $set: { user_balance: receiverNewBalanceReslut } }
+        {
+          $set: {
+            user_balance: receiverNewBalanceReslut,
+            user_history: recieverNewHistoryArray,
+          },
+        }
       )
 
-      // --> Write to sender History array
-
-      console.log('done')
+      res.status(200).json({ message: 'approved' })
       break
 
     default:
       break
   }
-
-  res.send(transactionObject)
 })
 
 // ::: Serve the Application
