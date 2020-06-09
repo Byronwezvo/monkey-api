@@ -386,6 +386,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       break
 
     case false:
+      res.status(400).json({ error: 'Transaction not approved' })
       break
 
     default:
