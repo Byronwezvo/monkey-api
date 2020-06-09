@@ -148,7 +148,7 @@ app.post('/generate-varification-code/:mobile', async (req, res) => {
 })
 
 /**
- * This route will be used when loggin ujjser in. Its
+ * This route will be used when loggin user in. Its
  *  very wise to use the method I use for easy access.
  *
  * @author Byron Wezvo
@@ -400,12 +400,29 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
 })
 
 /**
+ * ----------------------------------------------
+ *           App related Routes
+ * ----------------------------------------------
+ *
+ * Most of these routes will be used by the mobile app.
+ * Most of these routes are app.get routes
+ *
+ * @author Byron Wezvo
+ */
+
+/**
  * This route will basically get the balance of a user. What I intend to do
  * is first check if the user is offline or offline.
  *
  * @author Byron Wezvo
  */
-app.get('get-balance')
+app.get('/get-balance/:mobile', (req, res) => {
+  try {
+    res.send('works')
+  } catch (error) {
+    res.status(500).json(serverErrorMessage)
+  }
+})
 
 // ::: Serve the Application
 app.listen(3000, () => console.log('Application Running on 3000'))
