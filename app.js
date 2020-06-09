@@ -379,6 +379,8 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       )
 
       // -> Write Transaction to transactions [db]
+      const completedTransaction = new TransactionModel(transactionObject)
+      await completedTransaction.save()
 
       res.status(200).json({ message: 'approved' })
       break
