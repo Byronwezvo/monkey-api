@@ -1,6 +1,6 @@
 {
   "name": "monkey-api",
-  "version": "0.0.1",
+  "version": "0.2.1",
   "description": "This is the backend for a mobile e wallert and payment gateway developed by Byron Wezvo. #Stitch Pay\u001b[D\u001b[D\u001b[C\u001b[C",
   "main": "app.js",
   "scripts": {
