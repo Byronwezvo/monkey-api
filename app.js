@@ -413,7 +413,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
 
 /**
  * This route will basically get the balance of a user. What I intend to do
- * is first check if the user is offline or offline.
+ * is first check if the user is online.
  *
  * @author Byron Wezvo
  *
@@ -439,7 +439,49 @@ app.get('/get-balance/:mobile', async (req, res) => {
       // ::: If false throw an error
       case false:
         res.status(400).json({
-          error: 'You rae not logged in',
+          error: 'You are not logged in',
+        })
+        break
+
+      // ::: set default to server error
+      default:
+        res.status(500).json(serverErrorMessage)
+        break
+    }
+  } catch (error) {
+    res.status(500).json(serverErrorMessage)
+  }
+})
+
+/**
+ * This route will basically get the History of a user. What I intend to do
+ * is first check if the user is online.
+ *
+ * @author Byron Wezvo
+ *
+ */
+app.get('/get-history/:mobile', async (req, res) => {
+  try {
+    // ::: Store local variables
+    const user = req.params.mobile
+
+    //  -> check if user is online
+    // :::Store user in an object
+    const userObject = await UserModel.findOne({ user_mobile: user })
+
+    // ::: -> Conditions
+    switch (userObject['user_status']) {
+      // ::: If status is true respond with object
+      case true:
+        res.status(200).json({
+          user_history: userObject['user_history'],
+        })
+        break
+
+      // ::: If false throw an error
+      case false:
+        res.status(400).json({
+          error: 'You are not logged in',
         })
         break
 
