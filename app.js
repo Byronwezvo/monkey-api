@@ -399,6 +399,14 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
   }
 })
 
+/**
+ * This route will basically get the balance of a user. What I intend to do
+ * is first check if the user is offline or offline.
+ *
+ * @author Byron Wezvo
+ */
+app.get('get-balance')
+
 // ::: Serve the Application
 app.listen(3000, () => console.log('Application Running on 3000'))
 // TODO : change to another port or environment ports
