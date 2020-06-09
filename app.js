@@ -408,6 +408,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
  * Most of these routes are app.get routes
  *
  * @author Byron Wezvo
+ *
  */
 
 /**
@@ -415,6 +416,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
  * is first check if the user is offline or offline.
  *
  * @author Byron Wezvo
+ *
  */
 app.get('/get-balance/:mobile', (req, res) => {
   try {
