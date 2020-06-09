@@ -390,6 +390,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       break
 
     default:
+      res.status(500).json(serverErrorMessage)
       break
   }
 })
