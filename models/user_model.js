@@ -10,7 +10,6 @@ const newUser = mongoose.model('users', {
   user_verified: Boolean,
   user_verification_code: String,
   user_history: [],
-  user_notifications: [],
 })
 
 module.exports = newUser

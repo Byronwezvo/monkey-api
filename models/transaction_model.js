@@ -1,13 +1,19 @@
 const mongoose = require('mongoose')
 
 const transaction = mongoose.model('transactions', {
-  transactionid: String,
-  date: String,
+  amount: Number,
   approve: Boolean,
+  sender: String,
+  senderName: String,
+  senderInitialBalance: Number,
+  senderNewBalance: Number,
   senderStatus: Boolean,
-  recieverExist: Boolean,
-  sender: Object,
-  reciever: Object,
+  receiver: String,
+  receicerName: String,
+  receiverInitialBalane: Number,
+  receiverNewBalance: Number,
+  receiverExist: Boolean,
+  transactionID: String,
 })
 
 module.exports = transaction

@@ -17,6 +17,10 @@ app.set('view engine', 'handlebars')
 app.use(BodyParser.json())
 app.use(BodyParser.urlencoded({ extended: true }))
 
+// ::: Set up => Helmet Middleware
+var helmet = require('helmet')
+app.use(helmet())
+
 // >>> Import User Model
 const UserModel = require('./models/user_model')
 
@@ -31,6 +35,7 @@ const History = require('./utils/History')
 
 // >>> Import Server Error message
 const serverErrorMessage = require('./utils/server_error')
+const transaction = require('./models/transaction_model')
 
 // >>> Array in Local RAM Memory
 const userOnlineArray = []
@@ -143,7 +148,7 @@ app.post('/generate-varification-code/:mobile', async (req, res) => {
 })
 
 /**
- * This route will be used when loggin ujjser in. Its
+ * This route will be used when loggin user in. Its
  *  very wise to use the method I use for easy access.
  *
  * @author Byron Wezvo
@@ -267,149 +272,155 @@ app.post('/logout/:mobile', async (req, res) => {
  * @author Byron Wezvo
  */
 app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
-  // :::: Variables
-  const senderInput = req.params.sender
-  const recieverInput = req.params.reciever
-  const amountToSend = parseInt(req.params.amount)
+  // ::: Local Variables
+  const sender = req.params.sender
+  const reciever = req.params.reciever
+  const amount = parseInt(req.params.amount)
 
-  let transactionStatus = {
-    transactionid: 'Transaction.' + id(),
-    date: Date(),
+  // ::: Transaction obbject
+  let transactionObject = {
+    amount: amount,
     approve: false,
+    sender: sender,
+    senderName: '',
+    senderInitialBalance: null,
+    senderNewBalance: null,
     senderStatus: false,
-    recieverExist: false,
-    sender: null,
-    reciever: null,
+    receiver: reciever,
+    receicerName: '',
+    receiverInitialBalane: null,
+    receiverNewBalance: null,
+    receiverExist: false,
+    transactionID: `transaction-${id()}`,
   }
 
+  /**
+   * This list of checks will change values in the transaction objects
+   * basically if one of the given values is false or null then the route should
+   * return an error.
+   */
+
+  // ::: Check if Sender is online
+  const senderObject = await UserModel.findOne({ user_mobile: sender })
+  if (senderObject['user_status'] === true) {
+    transactionObject.senderStatus = true
+    transactionObject.senderName = senderObject['user_name']
+    transactionObject.senderInitialBalance = senderObject['user_balance']
+  } else {
+    res.status(300).json({ error: 'Sender is not online' })
+  }
+
+  // ::: check if Reciever exist in Database
+  const receiverObject = await UserModel.findOne({ user_mobile: reciever })
+  //console.log(receiverObject)
+
+  // ::: if null send and erro
+  if (receiverObject === null) {
+    res.status(400).json({ error: 'user does not exist' })
+  } else {
+    transactionObject.receicerName = receiverObject['user_name']
+    transactionObject.receiverInitialBalane = receiverObject['user_balance']
+    transactionObject.receiverExist = true
+  }
+
+  /**
+   * This logic will change the approve the transaction
+   */
+
+  //  ::: Check if Sender Newbalance is above that zero
+  const senderNewbalanceResult = transactionObject.senderInitialBalance - amount
+  const receiverNewBalanceReslut =
+    transactionObject.receiverInitialBalane + amount
+
+  if (senderNewbalanceResult > 0) {
+    transactionObject.approve = true
+  } else {
+    res.status(400).json({ error: 'Amount to send is above balance' })
+  }
+
+  // ::: Process Transaction -> Send money
+  switch (transactionObject.approve) {
+    case true:
+      // ::: update balances
+      // -> Transaction Object
+      transactionObject.senderNewBalance = senderNewbalanceResult
+      transactionObject.receiverNewBalance = receiverNewBalanceReslut
+
+      // -> Write new data to sender [db]
+      const senderNewHistoryArray = senderObject['user_history']
+      senderNewHistoryArray.push(
+        new History(
+          `You sent \$${amount} to ${reciever} [${transactionObject.receicerName}]`,
+          transactionObject.transactionID
+        )
+      )
+      await UserModel.updateOne(
+        { user_mobile: sender },
+        {
+          $set: {
+            user_balance: senderNewbalanceResult,
+            user_history: senderNewHistoryArray,
+          },
+        }
+      )
+
+      // -> Write new data to receiver [db]
+      const recieverNewHistoryArray = senderObject['user_history']
+      recieverNewHistoryArray.push(
+        new History(
+          `You recieved ${amount} from ${sender} [${transactionObject.senderName}]`,
+          transactionObject.transactionID
+        )
+      )
+      await UserModel.updateOne(
+        { user_mobile: reciever },
+        {
+          $set: {
+            user_balance: receiverNewBalanceReslut,
+            user_history: recieverNewHistoryArray,
+          },
+        }
+      )
+
+      // -> Write Transaction to transactions [db]
+      const completedTransaction = new TransactionModel(transactionObject)
+      await completedTransaction.save()
+
+      res.status(200).json({ message: 'approved' })
+      break
+
+    case false:
+      res.status(400).json({ error: 'Transaction not approved' })
+      break
+
+    default:
+      res.status(500).json(serverErrorMessage)
+      break
+  }
+})
+
+/**
+ * ----------------------------------------------
+ *           App related Routes
+ * ----------------------------------------------
+ *
+ * Most of these routes will be used by the mobile app.
+ * Most of these routes are app.get routes
+ *
+ * @author Byron Wezvo
+ *
+ */
+
+/**
+ * This route will basically get the balance of a user. What I intend to do
+ * is first check if the user is offline or offline.
+ *
+ * @author Byron Wezvo
+ *
+ */
+app.get('/get-balance/:mobile', (req, res) => {
   try {
-    // ::: Chek if sender is online
-    for (let i = 0; i < userOnlineArray.length; i++) {
-      const element = userOnlineArray[i]
-      if (
-        element['user_mobile'] == senderInput &&
-        element['user_status'] == true
-      ) {
-        transactionStatus.sender = element
-        transactionStatus.senderStatus = true
-        break
-      }
-    }
-
-    // ::: Reciever exist in DB
-    const result = await UserModel.find({ user_mobile: recieverInput })
-    if (result.length == 1) {
-      transactionStatus.reciever = result[0]
-      transactionStatus.recieverExist = true
-    }
-
-    // ::: Check the balance of sender after substracting the amount to be send
-    if (transactionStatus.sender['user_balance'] - amountToSend >= 0) {
-      transactionStatus.approve = true
-      console.log('transaction can be done')
-    }
-
-    // ::: Send Money and save History and Notifications
-    switch (transactionStatus.approve) {
-      case true:
-        // ::: calculate balance
-        const balance = transactionStatus.sender['user_balance'] - amountToSend
-        transactionStatus.sender['user_balance'] = balance
-
-        // ::: Save balance to sender
-        await UserModel.updateOne(
-          { user_mobile: senderInput },
-          { $set: { user_balance: balance } }
-        )
-
-        // ::: Save amountToSend to reciver
-        const newBalance =
-          transactionStatus.reciever['user_balance'] + amountToSend
-        transactionStatus.reciever['user_balance'] = newBalance
-        await UserModel.updateOne(
-          { user_mobile: recieverInput },
-          { $set: { user_balance: newBalance } }
-        )
-
-        // ::: Create Notification and History for Sender
-        // :: update notifications array
-        const updatedSenderHistoryArray =
-          transactionStatus.sender['user_history']
-        updatedSenderHistoryArray.push(
-          new History(
-            `You send ${amountToSend} to ${recieverInput}`,
-            transactionStatus.transactionid
-          )
-        )
-        //console.log(updatedSenderHistoryArray)
-        // :: save history to db
-        await UserModel.updateOne(
-          { user_mobile: senderInput },
-          { $set: { user_history: updatedSenderHistoryArray } }
-        )
-
-        // :: create notification
-        const updatedSenderNotificationArray =
-          transactionStatus.sender['user_notifications']
-        updatedSenderNotificationArray.push(
-          new Notification(`You send ${amountToSend} to ${recieverInput}`)
-        )
-        // :: save to db
-        await UserModel.updateOne(
-          { user_mobile: senderInput },
-          { $set: { user_notifications: updatedSenderNotificationArray } }
-        )
-
-        // ::: Create Notification and History for Reciever
-        // :: update notifications array
-        const updatedRecieverHistoryArray =
-          transactionStatus.reciever['user_history']
-        updatedRecieverHistoryArray.push(
-          new History(
-            `You recieved ${amountToSend} from ${recieverInput}`,
-            transactionStatus.transactionid
-          )
-        )
-        // :: save history to db
-        await UserModel.updateOne(
-          { user_mobile: recieverInput },
-          { $set: { user_history: updatedRecieverHistoryArray } }
-        )
-
-        // :: create notification
-        const updatedRecieverNotificationArray =
-          transactionStatus.reciever['user_notifications']
-        updatedRecieverNotificationArray.push(
-          new Notification(`You recieved ${amountToSend} from ${recieverInput}`)
-        )
-        //console.log(updatedRecieverNotificationArray)
-        // :: save to db
-        await UserModel.updateOne(
-          { user_mobile: recieverInput },
-          { $set: { user_notifications: updatedRecieverNotificationArray } }
-        )
-
-        // ::: Write in transaction model
-        const completedTransaction = new TransactionModel(transactionStatus)
-        await completedTransaction.save()
-
-        // :::
-        res.status(200).json(transactionStatus)
-        console.log(`${senderInput} sent ${amountToSend} to ${recieverInput}`)
-        break
-
-      // ::: Create a response and save data to db
-      case false:
-        const failedTransaction = new TransactionModel(transactionStatus)
-        await failedTransaction.save()
-        res.status(400).json(transactionStatus)
-        break
-
-      default:
-        res.status(500).json(serverErrorMessage)
-        break
-    }
-    // do some magic here
+    res.send('works')
   } catch (error) {
     res.status(500).json(serverErrorMessage)
   }
