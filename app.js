@@ -17,6 +17,10 @@ app.set('view engine', 'handlebars')
 app.use(BodyParser.json())
 app.use(BodyParser.urlencoded({ extended: true }))
 
+// ::: Set up => Helmet Middleware
+var helmet = require('helmet')
+app.use(helmet())
+
 // >>> Import User Model
 const UserModel = require('./models/user_model')
 
