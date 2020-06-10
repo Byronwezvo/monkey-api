@@ -226,8 +226,34 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
  */
 app.post('/logout/:mobile', async (req, res) => {
   try {
-    //
-    const userMobile = req.params.mobile
+    // ::: Store Local parameter as a local variable
+    const user = req.params.mobile
+
+    // -> find the user in the database
+    userObject = await UserModel.findOne({
+      user_mobile: user,
+    })
+
+    // -> log the user out
+    switch (userObject['user_status']) {
+      // -> If user status is true update db
+      case true:
+        await UserModel.updateOne(
+          { user_mobile: user },
+          { $set: { user_status: false } }
+        )
+
+        // -> Respond with something
+        res.status(200).json({ message: 'User logged out' })
+
+        // -> For now log the action to the console
+        console.log(`${userObject['user_name']} has logged out ${Date()}`)
+        break
+
+      default:
+        console.log('user already offline')
+        break
+    }
   } catch (error) {
     res.send(500).send(serverErrorMessage)
   }
