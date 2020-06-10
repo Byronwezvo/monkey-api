@@ -9,7 +9,7 @@ const app = express()
 // ::: Serve Static files in the public folder
 app.use(express.static('public'))
 
-// ::: Set up templating engine Staff
+// ::: Set up template engine Staff
 app.engine('handlebars', exphbs())
 app.set('view engine', 'handlebars')
 
@@ -63,7 +63,7 @@ app.get('/test', async (req, res, next) => {
 })
 
 /**
- * This infomation will be used by managment. BUt basically this route
+ * This information will be used by management. BUt basically this route
  * returns all users online is Users pushed from the log in route into
  * the online users route.
  *
@@ -157,7 +157,7 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
   try {
     // ::: Store Local variables from Params
     const inputMobile = req.params.mobile
-    const inputpassword = req.params.password
+    const inputPassword = req.params.password
 
     // ::: Query db for user => mobile (return an array)
     const mobileExistCheck = await UserModel.find({ user_mobile: inputMobile })
@@ -169,7 +169,7 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
       } else {
         switch (
           bcrypt.compareSync(
-            inputpassword,
+            inputPassword,
             mobileExistCheck[0]['user_password']
           ) //
         ) {
@@ -271,10 +271,10 @@ app.post('/logout/:mobile', async (req, res) => {
  *
  * @author Byron Wezvo
  */
-app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
+app.post('/sendmoney/:sender/:receiver/:amount', async (req, res) => {
   // ::: Local Variables
   const sender = req.params.sender
-  const reciever = req.params.reciever
+  const receiver = req.params.receiver
   const amount = parseInt(req.params.amount)
 
   // ::: Transaction object
@@ -286,9 +286,9 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
     senderInitialBalance: null,
     senderNewBalance: null,
     senderStatus: false,
-    receiver: reciever,
-    receicerName: '',
-    receiverInitialBalane: null,
+    receiver: receiver,
+    receiverName: '',
+    receiverInitialBalance: null,
     receiverNewBalance: null,
     receiverExist: false,
     transactionID: `transaction-${id()}`,
@@ -310,16 +310,16 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
     res.status(300).json({ error: 'Sender is not online' })
   }
 
-  // ::: check if Reciever exist in Database
-  const receiverObject = await UserModel.findOne({ user_mobile: reciever })
+  // ::: check if Receiver exist in Database
+  const receiverObject = await UserModel.findOne({ user_mobile: receiver })
   //console.log(receiverObject)
 
-  // ::: if null send and erro
+  // ::: if null send and error
   if (receiverObject === null) {
     res.status(400).json({ error: 'user does not exist' })
   } else {
-    transactionObject.receicerName = receiverObject['user_name']
-    transactionObject.receiverInitialBalane = receiverObject['user_balance']
+    transactionObject.receiverName = receiverObject['user_name']
+    transactionObject.receiverInitialBalance = receiverObject['user_balance']
     transactionObject.receiverExist = true
   }
 
@@ -327,10 +327,10 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
    * This logic will change the approve the transaction
    */
 
-  //  ::: Check if Sender Newbalance is above that zero
+  //  ::: Check if Sender New balance is above that zero
   const senderNewbalanceResult = transactionObject.senderInitialBalance - amount
-  const receiverNewBalanceReslut =
-    transactionObject.receiverInitialBalane + amount
+  const receiverNewBalanceResult =
+    transactionObject.receiverInitialBalance + amount
 
   if (senderNewbalanceResult > 0) {
     transactionObject.approve = true
@@ -344,13 +344,13 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       // ::: update balances
       // -> Transaction Object
       transactionObject.senderNewBalance = senderNewbalanceResult
-      transactionObject.receiverNewBalance = receiverNewBalanceReslut
+      transactionObject.receiverNewBalance = receiverNewBalanceResult
 
       // -> Write new data to sender [db]
       const senderNewHistoryArray = senderObject['user_history']
       senderNewHistoryArray.push(
         new History(
-          `You sent \$${amount} to ${reciever} [${transactionObject.receicerName}]`,
+          `You sent \$${amount} to ${receiver} [${transactionObject.receiverName}]`,
           transactionObject.transactionID
         )
       )
@@ -365,19 +365,19 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       )
 
       // -> Write new data to receiver [db]
-      const recieverNewHistoryArray = senderObject['user_history']
-      recieverNewHistoryArray.push(
+      const receiverNewHistoryArray = senderObject['user_history']
+      receiverNewHistoryArray.push(
         new History(
-          `You recieved ${amount} from ${sender} [${transactionObject.senderName}]`,
+          `You received ${amount} from ${sender} [${transactionObject.senderName}]`,
           transactionObject.transactionID
         )
       )
       await UserModel.updateOne(
-        { user_mobile: reciever },
+        { user_mobile: receiver },
         {
           $set: {
-            user_balance: receiverNewBalanceReslut,
-            user_history: recieverNewHistoryArray,
+            user_balance: receiverNewBalanceResult,
+            user_history: receiverNewHistoryArray,
           },
         }
       )
