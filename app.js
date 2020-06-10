@@ -226,40 +226,8 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
  */
 app.post('/logout/:mobile', async (req, res) => {
   try {
-    // get details
+    //
     const userMobile = req.params.mobile
-
-    // Pop out of online users array
-    for (let index = 0; index < userOnlineArray.length; index++) {
-      const element = userOnlineArray[index]
-      const userMobileOnline = element['user_mobile'] == userMobile
-      switch (userMobileOnline) {
-        case true:
-          element['user_status'] = false
-          userOnlineArray.pop(element)
-
-          //Status -> false
-          await UserModel.updateOne(
-            { user_mobile: userMobile },
-            { $set: { user_status: false } }
-          )
-
-          console.log(`${userMobile} has logged out`)
-          res.json({
-            completed: true,
-            message: 'User logged out',
-          })
-          break
-
-        case false:
-          res.status(500).json({ error: 'User not online' })
-          break
-
-        default:
-          break
-      }
-      break
-    }
   } catch (error) {
     res.send(500).send(serverErrorMessage)
   }
