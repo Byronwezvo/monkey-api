@@ -7,8 +7,10 @@ Development for this project started on **1 May 2020**.
 
 # Version 0.2.1 - 13 June 2020
 
-- re-wrote sendmoney route
+- re-wrote send money route
 - minor edits to the log in route
+- balance route from API
+- history route from API
 
 # Version 0.0.1 - 28 April 2020
 

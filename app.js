@@ -9,7 +9,7 @@ const app = express()
 // ::: Serve Static files in the public folder
 app.use(express.static('public'))
 
-// ::: Set up templating engine Staff
+// ::: Set up template engine Staff
 app.engine('handlebars', exphbs())
 app.set('view engine', 'handlebars')
 
@@ -63,7 +63,7 @@ app.get('/test', async (req, res, next) => {
 })
 
 /**
- * This infomation will be used by managment. BUt basically this route
+ * This information will be used by management. BUt basically this route
  * returns all users online is Users pushed from the log in route into
  * the online users route.
  *
@@ -157,7 +157,7 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
   try {
     // ::: Store Local variables from Params
     const inputMobile = req.params.mobile
-    const inputpassword = req.params.password
+    const inputPassword = req.params.password
 
     // ::: Query db for user => mobile (return an array)
     const mobileExistCheck = await UserModel.find({ user_mobile: inputMobile })
@@ -169,7 +169,7 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
       } else {
         switch (
           bcrypt.compareSync(
-            inputpassword,
+            inputPassword,
             mobileExistCheck[0]['user_password']
           ) //
         ) {
@@ -205,7 +205,7 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
             break
 
           default:
-            // ::: Mybe server is offline or something
+            // ::: Maybe server is offline or something
             res.status(500).json(serverErrorMessage)
             break
         }
@@ -226,39 +226,40 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
  */
 app.post('/logout/:mobile', async (req, res) => {
   try {
-    // get details
-    const userMobile = req.params.mobile
+    // ::: Store Local parameter as a local variable
+    const user = req.params.mobile
 
-    // Pop out of online users array
-    for (let index = 0; index < userOnlineArray.length; index++) {
-      const element = userOnlineArray[index]
-      const userMobileOnline = element['user_mobile'] == userMobile
-      switch (userMobileOnline) {
-        case true:
-          element['user_status'] = false
-          userOnlineArray.pop(element)
+    // -> find the user in the database
+    userObject = await UserModel.findOne({
+      user_mobile: user,
+    })
 
-          //Status -> false
-          await UserModel.updateOne(
-            { user_mobile: userMobile },
-            { $set: { user_status: false } }
-          )
+    // -> log the user out
+    switch (userObject['user_status']) {
+      // -> If user status is true update db
+      case true:
+        await UserModel.updateOne(
+          { user_mobile: user },
+          { $set: { user_status: false } }
+        )
 
-          console.log(`${userMobile} has logged out`)
-          res.json({
-            completed: true,
-            message: 'User logged out',
-          })
-          break
+        // -> Response
+        res.status(200).json({ message: 'User logged out' })
 
-        case false:
-          res.status(500).json({ error: 'User not online' })
-          break
+        // -> For now log the action to the console
+        console.log(`${userObject['user_name']} has logged out ${Date()}`)
+        break
 
-        default:
-          break
-      }
-      break
+      default:
+        // -> Response
+        res.status(500).send({ message: 'User not log in FALSE' })
+
+        // -> Do not remove this console log
+        console.log(
+          `${userObject['user_name']} - ${user} is trying to log out when he is offline, it could be a hack`
+        )
+
+        break
     }
   } catch (error) {
     res.send(500).send(serverErrorMessage)
@@ -271,13 +272,13 @@ app.post('/logout/:mobile', async (req, res) => {
  *
  * @author Byron Wezvo
  */
-app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
+app.post('/sendmoney/:sender/:receiver/:amount', async (req, res) => {
   // ::: Local Variables
   const sender = req.params.sender
-  const reciever = req.params.reciever
+  const receiver = req.params.receiver
   const amount = parseInt(req.params.amount)
 
-  // ::: Transaction obbject
+  // ::: Transaction object
   let transactionObject = {
     amount: amount,
     approve: false,
@@ -286,9 +287,9 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
     senderInitialBalance: null,
     senderNewBalance: null,
     senderStatus: false,
-    receiver: reciever,
-    receicerName: '',
-    receiverInitialBalane: null,
+    receiver: receiver,
+    receiverName: '',
+    receiverInitialBalance: null,
     receiverNewBalance: null,
     receiverExist: false,
     transactionID: `transaction-${id()}`,
@@ -310,16 +311,16 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
     res.status(300).json({ error: 'Sender is not online' })
   }
 
-  // ::: check if Reciever exist in Database
-  const receiverObject = await UserModel.findOne({ user_mobile: reciever })
+  // ::: check if Receiver exist in Database
+  const receiverObject = await UserModel.findOne({ user_mobile: receiver })
   //console.log(receiverObject)
 
-  // ::: if null send and erro
+  // ::: if null send and error
   if (receiverObject === null) {
     res.status(400).json({ error: 'user does not exist' })
   } else {
-    transactionObject.receicerName = receiverObject['user_name']
-    transactionObject.receiverInitialBalane = receiverObject['user_balance']
+    transactionObject.receiverName = receiverObject['user_name']
+    transactionObject.receiverInitialBalance = receiverObject['user_balance']
     transactionObject.receiverExist = true
   }
 
@@ -327,10 +328,10 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
    * This logic will change the approve the transaction
    */
 
-  //  ::: Check if Sender Newbalance is above that zero
+  //  ::: Check if Sender New balance is above that zero
   const senderNewbalanceResult = transactionObject.senderInitialBalance - amount
-  const receiverNewBalanceReslut =
-    transactionObject.receiverInitialBalane + amount
+  const receiverNewBalanceResult =
+    transactionObject.receiverInitialBalance + amount
 
   if (senderNewbalanceResult > 0) {
     transactionObject.approve = true
@@ -344,13 +345,13 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       // ::: update balances
       // -> Transaction Object
       transactionObject.senderNewBalance = senderNewbalanceResult
-      transactionObject.receiverNewBalance = receiverNewBalanceReslut
+      transactionObject.receiverNewBalance = receiverNewBalanceResult
 
       // -> Write new data to sender [db]
       const senderNewHistoryArray = senderObject['user_history']
       senderNewHistoryArray.push(
         new History(
-          `You sent \$${amount} to ${reciever} [${transactionObject.receicerName}]`,
+          `You sent \$${amount} to ${receiver} [${transactionObject.receiverName}]`,
           transactionObject.transactionID
         )
       )
@@ -365,19 +366,19 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
       )
 
       // -> Write new data to receiver [db]
-      const recieverNewHistoryArray = senderObject['user_history']
-      recieverNewHistoryArray.push(
+      const receiverNewHistoryArray = senderObject['user_history']
+      receiverNewHistoryArray.push(
         new History(
-          `You recieved ${amount} from ${sender} [${transactionObject.senderName}]`,
+          `You received ${amount} from ${sender} [${transactionObject.senderName}]`,
           transactionObject.transactionID
         )
       )
       await UserModel.updateOne(
-        { user_mobile: reciever },
+        { user_mobile: receiver },
         {
           $set: {
-            user_balance: receiverNewBalanceReslut,
-            user_history: recieverNewHistoryArray,
+            user_balance: receiverNewBalanceResult,
+            user_history: receiverNewHistoryArray,
           },
         }
       )
@@ -413,14 +414,83 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
 
 /**
  * This route will basically get the balance of a user. What I intend to do
- * is first check if the user is offline or offline.
+ * is first check if the user is online.
  *
  * @author Byron Wezvo
  *
  */
-app.get('/get-balance/:mobile', (req, res) => {
+app.get('/get-balance/:mobile', async (req, res) => {
   try {
-    res.send('works')
+    // ::: Store local variables
+    const user = req.params.mobile
+
+    //  -> check if user is online
+    // :::Store user in an object
+    const userObject = await UserModel.findOne({ user_mobile: user })
+
+    // ::: -> Conditions
+    switch (userObject['user_status']) {
+      // ::: If status is true respond with object
+      case true:
+        res.status(200).json({
+          user_balance: userObject['user_balance'],
+        })
+        break
+
+      // ::: If false throw an error
+      case false:
+        res.status(400).json({
+          error: 'You are not logged in',
+        })
+        break
+
+      // ::: set default to server error
+      default:
+        res.status(500).json(serverErrorMessage)
+        break
+    }
+  } catch (error) {
+    res.status(500).json(serverErrorMessage)
+  }
+})
+
+/**
+ * This route will basically get the History of a user. What I intend to do
+ * is first check if the user is online.
+ *
+ * @author Byron Wezvo
+ *
+ */
+app.get('/get-history/:mobile', async (req, res) => {
+  try {
+    // ::: Store local variables
+    const user = req.params.mobile
+
+    //  -> check if user is online
+    // :::Store user in an object
+    const userObject = await UserModel.findOne({ user_mobile: user })
+
+    // ::: -> Conditions
+    switch (userObject['user_status']) {
+      // ::: If status is true respond with object
+      case true:
+        res.status(200).json({
+          user_history: userObject['user_history'],
+        })
+        break
+
+      // ::: If false throw an error
+      case false:
+        res.status(400).json({
+          error: 'You are not logged in',
+        })
+        break
+
+      // ::: set default to server error
+      default:
+        res.status(500).json(serverErrorMessage)
+        break
+    }
   } catch (error) {
     res.status(500).json(serverErrorMessage)
   }
