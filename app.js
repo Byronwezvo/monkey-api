@@ -205,7 +205,7 @@ app.post('/login/:mobile/:password', async (req, res, next) => {
             break
 
           default:
-            // ::: Mybe server is offline or something
+            // ::: Maybe server is offline or something
             res.status(500).json(serverErrorMessage)
             break
         }
@@ -277,7 +277,7 @@ app.post('/sendmoney/:sender/:reciever/:amount', async (req, res) => {
   const reciever = req.params.reciever
   const amount = parseInt(req.params.amount)
 
-  // ::: Transaction obbject
+  // ::: Transaction object
   let transactionObject = {
     amount: amount,
     approve: false,
