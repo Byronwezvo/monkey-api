@@ -243,7 +243,7 @@ app.post('/logout/:mobile', async (req, res) => {
           { $set: { user_status: false } }
         )
 
-        // -> Respond with something
+        // -> Response
         res.status(200).json({ message: 'User logged out' })
 
         // -> For now log the action to the console
@@ -251,7 +251,14 @@ app.post('/logout/:mobile', async (req, res) => {
         break
 
       default:
-        console.log('user already offline')
+        // -> Response
+        res.status(500).send({ message: 'User not log in FALSE' })
+
+        // -> Do not remove this console log
+        console.log(
+          `${userObject['user_name']} - ${user} is trying to log out when he is offline, it could be a hack`
+        )
+
         break
     }
   } catch (error) {
